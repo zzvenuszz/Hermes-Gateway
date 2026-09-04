@@ -13,8 +13,13 @@ ENV PORT=7860
 ENV ADMIN_USER=admin
 ENV ADMIN_PASSWORD=admin123
 
-# Install system packages, Cockpit full suite, Python, SSH, xz-utils, file manager deps, and essential tools
+# Install system packages, Cockpit full suite, Python, C/C++ build toolchain, SSH, xz-utils, file manager deps, and essential tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    g++ \
+    gcc \
+    make \
+    python3-dev \
     python3 \
     python3-pip \
     python3-venv \

@@ -63,20 +63,25 @@ def setup_cockpit_plugins():
             logger.warning(f"Could not update Navigator manifest: {e}")
 
 def setup_container_user():
-    """Create and configure container admin user for Cockpit access."""
-    logger.info(f"Configuring container user '{ADMIN_USER}'...")
+    """Create and configure container admin user and root for Cockpit access."""
+    logger.info(f"Configuring container user '{ADMIN_USER}' and root...")
     try:
+        # Enable root login in Cockpit
+        os.makedirs("/etc/cockpit", exist_ok=True)
+        with open("/etc/cockpit/disallowed-users", "w") as f:
+            f.write("\n")
+
         # Create user if not exists
         res = subprocess.run(["id", ADMIN_USER], capture_output=True)
         if res.returncode != 0:
             subprocess.run(["useradd", "-m", "-s", "/bin/bash", "-G", "sudo", ADMIN_USER], check=False)
             logger.info(f"User '{ADMIN_USER}' created.")
 
-        # Set password
-        chpasswd_input = f"{ADMIN_USER}:{ADMIN_PASSWORD}\n"
+        # Set passwords for admin and root
+        chpasswd_input = f"{ADMIN_USER}:{ADMIN_PASSWORD}\nroot:{ADMIN_PASSWORD}\n"
         p = subprocess.Popen(["chpasswd"], stdin=subprocess.PIPE, text=True)
         p.communicate(input=chpasswd_input)
-        logger.info(f"Password set for '{ADMIN_USER}'.")
+        logger.info(f"Password set for '{ADMIN_USER}' and 'root'.")
 
         # Ensure sudoers file
         sudoers_file = f"/etc/sudoers.d/{ADMIN_USER}"
@@ -85,7 +90,7 @@ def setup_container_user():
             f.write(f"{ADMIN_USER} ALL=(ALL) NOPASSWD:ALL\n")
         os.chmod(sudoers_file, 0o440)
     except Exception as e:
-        logger.warning(f"Container user setup warning (bypassed if build-time created): {e}")
+        logger.warning(f"Container user setup warning: {e}")
 
 def setup_ssh():
     """Setup SSH daemon inside container for Cockpit local bridge authentication."""
@@ -146,8 +151,8 @@ def main():
     
     while True:
         proc = start_cockpit_ws()
-        logger.info(f"Cockpit Management Dashboard running on port 7860.")
-        logger.info(f"Default Login -> User: {ADMIN_USER} | Password: {ADMIN_PASSWORD}")
+        logger.info(f"Cockpit Management Dashboard running on port {PORT}.")
+        logger.info(f"Default Login -> User: {ADMIN_USER} or root | Password: {ADMIN_PASSWORD}")
         
         try:
             exit_code = proc.wait()

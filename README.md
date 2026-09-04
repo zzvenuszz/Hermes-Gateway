@@ -7,7 +7,7 @@ sdk: docker
 app_port: 7860
 pinned: false
 license: mit
-short_description: Container Server Management Dashboard powered by Cockpit and Python app.py
+short_description: Cockpit Container Server Management Dashboard
 ---
 
 # 🎛️ Cockpit Container Management Dashboard

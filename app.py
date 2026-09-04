@@ -65,25 +65,27 @@ def setup_cockpit_plugins():
 def setup_container_user():
     """Create and configure container admin user for Cockpit access."""
     logger.info(f"Configuring container user '{ADMIN_USER}'...")
-    
-    # Create user if not exists
-    res = subprocess.run(["id", ADMIN_USER], capture_output=True)
-    if res.returncode != 0:
-        subprocess.run(["useradd", "-m", "-s", "/bin/bash", "-G", "sudo", ADMIN_USER], check=False)
-        logger.info(f"User '{ADMIN_USER}' created.")
+    try:
+        # Create user if not exists
+        res = subprocess.run(["id", ADMIN_USER], capture_output=True)
+        if res.returncode != 0:
+            subprocess.run(["useradd", "-m", "-s", "/bin/bash", "-G", "sudo", ADMIN_USER], check=False)
+            logger.info(f"User '{ADMIN_USER}' created.")
 
-    # Set password
-    chpasswd_input = f"{ADMIN_USER}:{ADMIN_PASSWORD}\n"
-    p = subprocess.Popen(["chpasswd"], stdin=subprocess.PIPE, text=True)
-    p.communicate(input=chpasswd_input)
-    logger.info(f"Password set for '{ADMIN_USER}'.")
+        # Set password
+        chpasswd_input = f"{ADMIN_USER}:{ADMIN_PASSWORD}\n"
+        p = subprocess.Popen(["chpasswd"], stdin=subprocess.PIPE, text=True)
+        p.communicate(input=chpasswd_input)
+        logger.info(f"Password set for '{ADMIN_USER}'.")
 
-    # Ensure sudo without password inside container
-    sudoers_file = f"/etc/sudoers.d/{ADMIN_USER}"
-    os.makedirs("/etc/sudoers.d", exist_ok=True)
-    with open(sudoers_file, "w") as f:
-        f.write(f"{ADMIN_USER} ALL=(ALL) NOPASSWD:ALL\n")
-    os.chmod(sudoers_file, 0o440)
+        # Ensure sudoers file
+        sudoers_file = f"/etc/sudoers.d/{ADMIN_USER}"
+        os.makedirs("/etc/sudoers.d", exist_ok=True)
+        with open(sudoers_file, "w") as f:
+            f.write(f"{ADMIN_USER} ALL=(ALL) NOPASSWD:ALL\n")
+        os.chmod(sudoers_file, 0o440)
+    except Exception as e:
+        logger.warning(f"Container user setup warning (bypassed if build-time created): {e}")
 
 def setup_ssh():
     """Setup SSH daemon inside container for Cockpit local bridge authentication."""

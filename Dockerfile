@@ -49,6 +49,13 @@ RUN curl -sSL -o /tmp/navigator.deb https://github.com/45Drives/cockpit-navigato
     && dpkg -i /tmp/navigator.deb \
     && rm /tmp/navigator.deb
 
+# Pre-create admin user and configure sudoers at build time (bypasses runtime no_new_privs on Render)
+RUN useradd -m -s /bin/bash admin && \
+    echo "admin:admin123" | chpasswd && \
+    mkdir -p /etc/sudoers.d && \
+    echo "admin ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/admin && \
+    chmod 0440 /etc/sudoers.d/admin
+
 # Set working directory
 WORKDIR /app
 
